@@ -1,68 +1,41 @@
-const QUOTES = [
-  {
-    author: "Kevin Kruse",
-    quote: "Life isn’t about getting and having, it’s about giving and being."
-  },
-  {
-    author: "Napoleon Hill",
-    quote: "Whatever the mind of man can conceive and believe, it can achieve."
-  },
-  {
-    author: "Albert Einstein",
-    quote: "Strive not to be a success, but rather to be of value."
-  },
-  {
-    author: "Robert Frost",
-    quote:
-      "Two roads diverged in a wood, and I—I took the one less traveled by, And that has made all the difference."
-  },
-  {
-    author: "Florence Nightingale",
-    quote: "I attribute my success to this: I never gave or took any excuse."
-  },
-  {
-    author: "Wayne Gretzky",
-    quote: "You miss 100% of the shots you don’t take."
-  },
-  {
-    author: "Michael Jordan",
-    quote:
-      "I’ve missed more than 9000 shots in my career. I’ve lost almost 300 games. 26 times I’ve been trusted to take the game winning shot and missed. I’ve failed over and over and over again in my life. And that is why I succeed."
-  },
-  {
-    author: "Amelia Earhart",
-    quote:
-      "The most difficult thing is the decision to act, the rest is merely tenacity."
-  },
-  {
-    author: "Babe Ruth",
-    quote: "Every strike brings me closer to the next home run."
-  },
-  {
-    author: "W. Clement Stone",
-    quote: "Definiteness of purpose is the starting point of all achievement."
-  }
-];
+let quotesData;
 
-function newQuote() {
-  let getRandom = () => Math.floor(Math.random() * QUOTES.length);
+function getQuotes() {
+  return $.ajax({
+    accepts: "application/json",
+    url:
+      "https://gist.githubusercontent.com/camperbot/5a022b72e96c4c9585c32bf6a75f62d9/raw/e3c6895ce42069f0ee7e991229064f167fe8ccdc/quotes.json",
+    success: function(jsonQuotes) {
+      if (typeof jsonQuotes === "string") {
+        quotesData = JSON.parse(jsonQuotes);
+      }
+    }
+  });
+}
+
+function getRandomQuote() {
+  let getRandom = () => Math.floor(Math.random() * quotesData.quotes.length);
   let randomNumber = getRandom();
 
   let lastQuote = document.getElementById("text").textContent;
-  while (lastQuote == QUOTES[randomNumber].quote) {
-    randomNumber = getRandom();
-  }
+  while (lastQuote == quotesData.quotes[randomNumber].quote)
+    randomNumber = getRandom(); // check that the quote is not the same as the last one
 
-  $("#new-quote").prop("disabled", true);
-  $("#author").fadeToggle(500, function() {
+  let randomQuote = quotesData.quotes[randomNumber].quote;
+  let randomAuthor = quotesData.quotes[randomNumber].author;
+  return { quote: randomQuote, author: randomAuthor };
+}
+
+function setQuote() {
+  let newQuote = getRandomQuote();
+
+  $("#new-quote").prop("disabled", true); // disables new quote button
+  $("#author, #text").fadeToggle(500, function() {
+    $("#author").html(newQuote.author);
+    $("#text").html(newQuote.quote);
+
+    $(this).fadeToggle(500);
     $("#new-quote").prop("disabled", false);
-    $(this).fadeToggle(500);
-    $(this).html(QUOTES[randomNumber].author);
-  });
-
-  $("#text").fadeToggle(500, function() {
-    $(this).fadeToggle(500);
-    $(this).html(QUOTES[randomNumber].quote);
   });
 }
 
@@ -78,7 +51,11 @@ function tweetQuote() {
 }
 
 $(document).ready(() => {
-  newQuote();
-  $("#new-quote").on("click", newQuote);
-  $("#tweet-quote").on("click", tweetQuote);
+  getQuotes().then(() => {
+    // get quotes data then apply handlers and set first quote
+    setQuote();
+
+    $("#new-quote").on("click", setQuote);
+    $("#tweet-quote").on("click", tweetQuote);
+  });
 });
